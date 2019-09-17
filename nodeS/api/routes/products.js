@@ -8,10 +8,24 @@ const Product = require('../models/product');
 
 router.get('/', (req, res, next) => {
     Product.find()
+    .select('name price _id')
     .exec()
     .then(docs => {
-        console.log(docs);
-        res.status(200).json(docs);
+        const response = {
+            count: docs.length,
+            products: docs.map(doc => {
+                return {
+                    name: doc.name,
+                    price: doc.price,
+                    _id: doc._id,
+                    request: {
+                        type: 'GET',
+                        url: 'http://localhost:3000/products/' + doc._id,
+                    }
+                }
+            })
+        };
+        res.status(200).json(response);
     })
     .catch(err => {
         console.log(err);
@@ -30,8 +44,18 @@ router.post('/', (req, res, next) => {
     product.save().then(result => {
         console.log(result);
         res.status(200).json({
-            message: 'Handling Post...',
-            createProduct: product
+            message: 'Product uploaded!',
+            createProduct: {
+                name: result.name,
+                price: result.price,
+                _id: result._id,
+                request: {
+                    type: 'GET',
+                    url: 'http://localhost:3000/products/' + doc._id,
+                    type: 'DELETE',
+                    url: 'http://localhost:3000/products/' + doc._id
+                }
+            }
         });
     })
     .catch(err => {
@@ -45,11 +69,18 @@ router.post('/', (req, res, next) => {
 router.get('/:productId', (req, res, next) => {
     const id = req.params.productId;
     Product.findById(id)
+    .select('name price _id')
     .exec()
     .then(doc => {
         console.log("From database: " + doc);
         if (doc) {
-            res.status(200).json(doc);
+            res.status(200).json({
+                product: doc,
+                request: {
+                    type: 'GET',
+                    url: 'http://localhost:3000/products'
+                }
+            });
         } else {
             res.status(404).json({
                 message: "no result!"
@@ -74,7 +105,13 @@ router.patch('/:productId', (req, res, next) => {
     .exec()
     .then(doc => {
         console.log(doc);
-        res.status(200).json(doc);
+        res.status(200).json({
+            product: doc,
+            request: {
+                type: 'GET',
+                url: 'http://localhost:3000/products/' + id
+            }
+        });
     })
     .catch(err => {
         console.log(err);
